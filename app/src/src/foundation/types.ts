@@ -2,10 +2,10 @@
 // 卡片尺寸常量
 // ============================================================
 
-export const CARD_W = 380;
-export const CARD_H = 532;
-export const DOCK_W = 460;
-export const DOCK_H = 640;
+export const CARD_W = 228;
+export const CARD_H = 319;
+export const DOCK_W = 276;
+export const DOCK_H = 384;
 
 // ============================================================
 // 卡片

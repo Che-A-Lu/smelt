@@ -38,12 +38,9 @@ export default function App() {
 
   // 新建工作台卡片
   const createWorkbench = useCallback(() => {
-    if (!index) return;
-    const card = createCard(t("wb.newSession"), { x: 300, y: 200 });
-    card.isWorkbench = true;
-    refresh();
-    setAutoOpenWb(card.id);
-  }, [index, refresh]);
+    const wbId = `wb-${Date.now()}`;
+    setAutoOpenWb(wbId);
+  }, []);
 
   if (!index) {
     return (

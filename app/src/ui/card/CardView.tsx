@@ -151,7 +151,7 @@ export function CardView({
   const isGenerating = card.status === "generating";
   const isOrphaned = card.status === "orphaned";
   const category = fileCategory(card.label);
-  const cardRem = (CARD_W * interaction.global.cardScale) / 150;
+  const cardRem = (380 * interaction.global.cardScale) / 150;
 
   // 拖拽跟随循环（1:1 跟手，相对偏移避免画布坐标混乱）
   const dragLoop = useCallback(() => {

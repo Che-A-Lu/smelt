@@ -28,7 +28,8 @@ export function Canvas({ index, interaction = defaultInteraction(), onCreateWork
   const view = useRef({ x: 0, y: 0, zoom: 1 });
   const animFrame = useRef(0);
   const [dropActive, setDropActive] = useState(false);
-  const [openWorkbenches, setOpenWorkbenches] = useState<Set<string>>(new Set());
+  interface ActiveWB { id: string; position: { x: number; y: number }; }
+  const [activeWbs, setActiveWbs] = useState<ActiveWB[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [exportingCardIds, setExportingCardIds] = useState<Set<string> | null>(null);
@@ -38,7 +39,10 @@ export function Canvas({ index, interaction = defaultInteraction(), onCreateWork
   // autoOpen 工作台
   useEffect(() => {
     if (autoOpenWorkbenchId) {
-      setOpenWorkbenches((prev) => new Set([...prev, autoOpenWorkbenchId]));
+      const v = view.current;
+      const x = (-v.x + window.innerWidth / 2) / v.zoom;
+      const y = (-v.y + window.innerHeight / 2) / v.zoom;
+      setActiveWbs((prev) => [...prev, { id: autoOpenWorkbenchId, position: { x, y } }]);
     }
   }, [autoOpenWorkbenchId]);
 
@@ -397,7 +401,7 @@ export function Canvas({ index, interaction = defaultInteraction(), onCreateWork
         }
         pan.current.spaceHeld = true;
       }
-      if (e.code === "Escape") { setOpenWorkbenches(new Set()); setSelectedIds(new Set()); setQuickPreview(null); }
+      if (e.code === "Escape") { setActiveWbs([]); setSelectedIds(new Set()); setQuickPreview(null); }
       if ((e.ctrlKey || e.metaKey) && e.code === "KeyN") { e.preventDefault(); onCreateWorkbench(); }
       if ((e.ctrlKey || e.metaKey) && e.code === "KeyS") {
         e.preventDefault();
@@ -421,7 +425,7 @@ export function Canvas({ index, interaction = defaultInteraction(), onCreateWork
     window.addEventListener("keydown", onKD);
     window.addEventListener("keyup", onKU);
     return () => { window.removeEventListener("keydown", onKD); window.removeEventListener("keyup", onKU); };
-  }, [onCreateWorkbench, deletingId, selectedIds, onRefresh, quickPreview, openWorkbenches]);
+  }, [onCreateWorkbench, deletingId, selectedIds, onRefresh, quickPreview, activeWbs]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -531,28 +535,22 @@ export function Canvas({ index, interaction = defaultInteraction(), onCreateWork
                 onDragEnd={onCardDragEnd}
                 onClick={onCardClick}
                 onDeleteComplete={onDeleteComplete}
-                onDoubleClick={(id) => {
-                  if (card.isWorkbench) {
-                    setOpenWorkbenches((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(id)) next.delete(id); else next.add(id);
-                      return next;
-                    });
-                  }
-                }}
+                onDoubleClick={undefined}
               />
             );
           })}
 
-        {[...openWorkbenches].map((id) => (
+        {activeWbs.map((wb) => (
           <Workbench
-            key={id}
-            card={index.cards[id]}
+            key={wb.id}
+            workbenchId={wb.id}
+            position={wb.position}
             interaction={effectiveInteraction}
             allCards={Object.values(index.cards)}
             registerZone={registerZone}
             unregisterZone={unregisterZone}
-            onClose={() => setOpenWorkbenches((prev) => { const next = new Set(prev); next.delete(id); return next; })}
+            onClose={() => setActiveWbs((prev) => prev.filter((w) => w.id !== wb.id))}
+            onDelete={() => setActiveWbs((prev) => prev.filter((w) => w.id !== wb.id))}
           />
         ))}
 

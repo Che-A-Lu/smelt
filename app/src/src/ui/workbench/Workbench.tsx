@@ -23,12 +23,14 @@ import type { TeamContext } from "../../features/mode/team";
 import type { OrchestratorContext } from "../../features/mode/orchestrator";
 
 interface WorkbenchProps {
-  card: CardEntry;
+  workbenchId: string;
+  position: { x: number; y: number };
   interaction: InteractionConfig;
   allCards: CardEntry[];
   registerZone: (id: string, el: HTMLElement, type: "context" | "tool" | "mode", onDrop: (cardId: string) => void) => void;
   unregisterZone: (id: string) => void;
   onClose: () => void;
+  onDelete?: () => void;
 }
 
 const workbenchZones: ZoneConfig[] = [
@@ -42,7 +44,10 @@ const workbenchZones: ZoneConfig[] = [
 const MAX_TOOL_ROUNDS = 5;
 const MODE_KEY = "card-space-tool-mode";
 
-export function Workbench({ card, interaction, allCards, registerZone, unregisterZone, onClose }: WorkbenchProps) {
+export function Workbench({ workbenchId, position: initialPos, interaction, allCards, registerZone, unregisterZone, onClose, onDelete }: WorkbenchProps) {
+  const wbId = workbenchId;
+  const [pos, setPos] = useState({ x: initialPos.x, y: initialPos.y });
+  const [size, setSize] = useState({ w: 2000, h: 800 });
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<WbMessage[]>([]);
   const [tempFiles, setTempFiles] = useState<TempFile[]>([]);
@@ -82,6 +87,10 @@ export function Workbench({ card, interaction, allCards, registerZone, unregiste
   const [showModeHelp, setShowModeHelp] = useState(false);
   const [pauseResolve, setPauseResolve] = useState<(() => void) | null>(null);
   const [pauseLabel, setPauseLabel] = useState("");
+  const [wbName, setWbName] = useState(t("wb.newSession"));
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const titleDrag = useRef({ active: false, startX: 0, startY: 0, startPosX: 0, startPosY: 0 });
+  const resize = useRef({ active: false, startX: 0, startY: 0, startW: 0, startH: 0 });
   const [modeToast, setModeToast] = useState<string | null>(null);
   const [openDrawer, setOpenDrawer] = useState<string | null>(null);
   const [drawerTop, setDrawerTop] = useState(0);
@@ -103,7 +112,7 @@ export function Workbench({ card, interaction, allCards, registerZone, unregiste
 
   // 加载持久化会话
   useEffect(() => {
-    loadWorkbenchSession(card.id).then((saved) => {
+    loadWorkbenchSession(wbId).then((saved) => {
       if (!saved) return;
       setMessages(saved.messages ?? []);
       setTempFiles(saved.tempFiles ?? []);
@@ -139,7 +148,7 @@ export function Workbench({ card, interaction, allCards, registerZone, unregiste
   useEffect(() => {
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
-      saveWorkbenchSession(card.id, {
+      saveWorkbenchSession(wbId, {
         messages, tempFiles, trayCards, contextOrder, toolItems,
         modeCardId, localModel, autoMode, thinkingMode,
         contextOverrides: Object.fromEntries(contextOverrides.current),
@@ -195,9 +204,9 @@ export function Workbench({ card, interaction, allCards, registerZone, unregiste
     if (!extractedContent) return;
     const title = `${t("wb.extractedCardTitle")} ${new Date().toLocaleTimeString()}`;
     const card = createCard(title, { x: 300 + Math.random() * 200, y: 300 + Math.random() * 200 });
-    setTrayCards((prev) => [...prev, card.id]);
+    setTrayCards((prev) => [...prev, wbId]);
     const cat = fileCategory("extract.md");
-    setTempFiles((prev) => [...prev, { name: title + ".md", size: new TextEncoder().encode(extractedContent).length, category: cat, cardId: card.id }]);
+    setTempFiles((prev) => [...prev, { name: title + ".md", size: new TextEncoder().encode(extractedContent).length, category: cat, cardId: wbId }]);
     setMessages((prev) => [...prev, { role: "assistant", content: `[Extracted]\n${extractedContent}`, thinkingTrace: "", checked: false, collapsed: true, timestamp: Date.now() }]);
     setExtractedContent("");
   }, [extractedContent]);
@@ -492,7 +501,7 @@ export function Workbench({ card, interaction, allCards, registerZone, unregiste
   const doCreateCard = useCallback(() => {
     const title = newCardTitle.trim() || t("card.defaultLabel");
     const card = createCard(title, { x: 300 + Math.random() * 200, y: 300 + Math.random() * 200 });
-    setTrayCards((prev) => [...prev, card.id]);
+    setTrayCards((prev) => [...prev, wbId]);
     setShowNewCard(false);
     setNewCardTitle("");
     setNewCardType("md");
@@ -512,7 +521,7 @@ export function Workbench({ card, interaction, allCards, registerZone, unregiste
     if (!mainCard?.sphereId) return;
 
     const readmeLines = [
-      `# ${card.label || "Workbench Template"}`, "", `> ${new Date().toLocaleString()}`,
+      `# ${wbName || "Workbench Template"}`, "", `> ${new Date().toLocaleString()}`,
       "", "## Context cards", ...contextCardIds.map((cid) => { const c = allCards.find((x) => x.id === cid); return `- ${c?.label ?? "(gone)"}`; }),
       "", "## Tool cards", ...toolCardIds.map((cid) => { const c = allCards.find((x) => x.id === cid); return `- ${c?.label ?? "(gone)"}${c?.hasScripts ? " (script)" : ""}`; }),
       "", "## How to use", "", "1. Import this .card into Smelt space", "2. Drag cards into workbench Context and Tool zones",
@@ -538,13 +547,13 @@ export function Workbench({ card, interaction, allCards, registerZone, unregiste
       card: mainCard, sphere: idx.spheres[mainCard.sphereId],
       shell: BUILTIN_SHELLS[0].theme, extraFiles,
       manifest: { id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2),
-        label: card.label || "Workbench Template", version: "1.0.0", author: "Smelt User",
+        label: wbName || "Workbench Template", version: "1.0.0", author: "Smelt User",
         description: `Context ${contextCardIds.length} · Tools ${toolCardIds.length}` + (modeCardData ? ` · Mode: ${modeCardData.type}` : ""),
         tags: ["workbench-template"], requires: [], createdAt: Date.now(), exportedAt: Date.now() },
       password: null, authorName: "Smelt User",
     });
-    downloadBlob(blob, `${card.label || "workbench-template"}.card`);
-  }, [contextOrder, toolItems, modeCardId, modeCardData, allCards, card]);
+    downloadBlob(blob, `${wbName || "workbench-template"}.card`);
+  }, [contextOrder, toolItems, modeCardId, modeCardData, allCards, wbName]);
 
   // 阶段五：归档
   const doArchive = useCallback(() => {
@@ -572,40 +581,40 @@ export function Workbench({ card, interaction, allCards, registerZone, unregiste
     setContextOrder([]);
     setToolItems([]);
     clearTimeout(saveTimer.current);
-    saveWorkbenchSession(card.id, {
+    saveWorkbenchSession(wbId, {
       messages: [], tempFiles, trayCards, contextOrder: [], toolItems: [],
       modeCardId, localModel, autoMode, thinkingMode,
       contextOverrides: Object.fromEntries(contextOverrides.current),
     });
     onClose();
-  }, [messages, contextOrder, card.id, onClose, tempFiles, trayCards, toolItems, modeCardId, localModel, autoMode, thinkingMode]);
+  }, [messages, contextOrder, wbId, onClose, tempFiles, trayCards, toolItems, modeCardId, localModel, autoMode, thinkingMode]);
 
   // 阶段五：清除
   // 关闭时最终保存
   const handleClose = useCallback(() => {
     clearTimeout(saveTimer.current);
-    saveWorkbenchSession(card.id, {
+    saveWorkbenchSession(wbId, {
       messages, tempFiles, trayCards, contextOrder, toolItems,
       modeCardId, localModel, autoMode, thinkingMode,
       contextOverrides: Object.fromEntries(contextOverrides.current),
     });
     onClose();
-  }, [messages, tempFiles, trayCards, contextOrder, toolItems, modeCardId, localModel, autoMode, thinkingMode, card.id, onClose]);
+  }, [messages, tempFiles, trayCards, contextOrder, toolItems, modeCardId, localModel, autoMode, thinkingMode, wbId, onClose]);
 
   const doClear = useCallback(() => {
     clearTimeout(saveTimer.current);
     contextOverrides.current.clear();
-    deleteWorkbenchSession(card.id);
+    deleteWorkbenchSession(wbId);
     setMessages([]);
     setTempFiles([]);
     setTrayCards([]);
     setContextOrder([]);
     setToolItems([]);
     onClose();
-  }, [card.id, onClose]);
+  }, [wbId, onClose]);
 
   const zoneProps: ZoneProps = {
-    sessionId: card.id, allCards, registerZone, unregisterZone,
+    sessionId: wbId, allCards, registerZone, unregisterZone,
     messages, onMessagesChange,
     tempFiles, onTempFilesChange,
     trayCards, onTrayCardsChange,
@@ -621,7 +630,41 @@ export function Workbench({ card, interaction, allCards, registerZone, unregiste
   };
 
   return (
-    <div className="panel-enter" style={{ ...panelStyle(card, interaction), width: 460, display: "flex", flexDirection: "row" }}>
+    <div className="panel-enter" style={{ position: "absolute", left: pos.x, top: pos.y, width: size.w, height: size.h, background: "#ffffff", border: "1px solid #d1d5db", zIndex: 100, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* 标题栏（可拖拽移动） */}
+      <div
+        onPointerDown={(e) => {
+          titleDrag.current = { active: true, startX: e.clientX, startY: e.clientY, startPosX: pos.x, startPosY: pos.y };
+          (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!titleDrag.current.active) return;
+          setPos({
+            x: Math.round(titleDrag.current.startPosX + (e.clientX - titleDrag.current.startX)),
+            y: Math.round(titleDrag.current.startPosY + (e.clientY - titleDrag.current.startY)),
+          });
+        }}
+        onPointerUp={() => {
+          titleDrag.current.active = false;
+          setPos((prev) => ({
+            x: Math.max(-size.w + 200, prev.x),
+            y: Math.max(-40, prev.y),
+          }));
+        }}
+        style={{ height: 40, cursor: "grab", display: "flex", alignItems: "center", padding: "0 12px", borderBottom: "1px solid #e5e7eb", fontSize: "0.8125rem", fontWeight: 600, color: "#1a1a2e", background: "#fafbfc", userSelect: "none", flexShrink: 0 }}
+      >
+        <span>{wbName}</span>
+        <button onClick={onClose} style={{ marginLeft: "auto", border: "none", background: "none", cursor: "pointer", fontSize: "1rem", color: "#9ca3af", padding: 0 }}>x</button>
+      </div>
+      {showDeleteConfirm && (
+        <div style={{ padding: "12px", background: "#fef2f2", borderBottom: "1px solid #fecaca", fontSize: "0.75rem", color: "#dc2626", textAlign: "center", flexShrink: 0 }}>
+          Delete this workbench and all its history?
+          <button onClick={() => { setShowDeleteConfirm(false); onDelete?.(); }} style={{ marginLeft: 12, padding: "2px 10px", border: "1px solid #dc2626", borderRadius: 4, background: "#fef2f2", color: "#dc2626", fontSize: "0.6875rem", cursor: "pointer" }}>Delete</button>
+          <button onClick={() => setShowDeleteConfirm(false)} style={{ marginLeft: 6, padding: "2px 10px", border: "1px solid #d1d5db", borderRadius: 4, background: "#fff", fontSize: "0.6875rem", cursor: "pointer" }}>Cancel</button>
+        </div>
+      )}
+      {/* 主体：左窄列 + 右区 */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "row", overflow: "hidden" }}>
       {/* 左窄列：图标 + 角标 */}
       <LeftIcons zoneProps={zoneProps} openDrawer={openDrawer} setOpenDrawer={setOpenDrawer} iconRefs={iconRefs} setDrawerTop={setDrawerTop} setDrawerLeft={setDrawerLeft} />
 
@@ -701,6 +744,7 @@ export function Workbench({ card, interaction, allCards, registerZone, unregiste
       {openDrawer && (
         <Drawer zoneId={openDrawer} top={drawerTop} left={drawerLeft} zoneProps={zoneProps} onClose={() => setOpenDrawer(null)} />
       )}
+      </div>{/* 关闭主体 flex row */}
 
       {/* ContextDialog / new card / mode help */}
       {showContextEdit && (() => {
@@ -734,6 +778,26 @@ export function Workbench({ card, interaction, allCards, registerZone, unregiste
           </div>
         </div>
       )}
+
+      {/* 右下角拉伸手柄 */}
+      <div
+        onPointerDown={(e) => {
+          e.stopPropagation();
+          resize.current = { active: true, startX: e.clientX, startY: e.clientY, startW: size.w, startH: size.h };
+          (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!resize.current.active) return;
+          setSize({
+            w: Math.min(3000, Math.max(600, Math.round(resize.current.startW + (e.clientX - resize.current.startX)))),
+            h: Math.min(2000, Math.max(400, Math.round(resize.current.startH + (e.clientY - resize.current.startY)))),
+          });
+        }}
+        onPointerUp={() => { resize.current.active = false; }}
+        style={{ position: "absolute", right: 0, bottom: 0, width: 24, height: 24, cursor: "nwse-resize", zIndex: 10 }}
+      >
+        <div style={{ width: 0, height: 0, borderLeft: "12px solid transparent", borderRight: "12px solid #d1d5db", borderTop: "12px solid #d1d5db", borderBottom: "12px solid transparent", position: "absolute", right: 2, bottom: 2 }} />
+      </div>
     </div>
   );
 }
@@ -760,12 +824,6 @@ function ZoneShell({ zone, isOpen, onToggle, zoneProps, children }: {
 }
 
 const CARD_W = 380;
-const panelStyle = (card: CardEntry, interaction: InteractionConfig): React.CSSProperties => ({
-  position: "absolute", left: card.position.x + CARD_W + 10, top: card.position.y,
-  width: 460, maxHeight: "70vh",
-  background: "#ffffff", border: "1px solid #d1d5db",
-  zIndex: 100, boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-});
 const inputStyle: React.CSSProperties = {
   width: "100%", border: "1px solid #e5e7eb", borderRadius: 4,
   padding: 6, fontSize: "0.6875rem", resize: "none", outline: "none",
