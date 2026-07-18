@@ -44,7 +44,14 @@ git commit -m "描述改动"
 git push
 ```
 
-**如果是 AI 助手**：你可以直接改 `smelt-github/app/src/` 下的文件（bash 可访问），然后用上面的 git 流程推送。记得把改动也同步回 `.card概念/app/`。
+**如果是 AI 助手（bash 无法访问中文路径）**：直接在 `smelt-github/app/` 下改代码，然后 git push。改完后**必须同步回 .card概念**，否则下次 Dalu 新对话读到的还是旧代码：
+
+```bash
+# 反向同步：smelt-github → .card概念
+powershell -Command "Copy-Item -Path 'E:\My agent file\My file\smelt-github\app\src' -Destination 'E:\My agent file\My file\.card概念\app\src' -Recurse -Force"
+```
+
+**此后每次改代码都走这条双向路：改 smelt-github → git push → 反向拷回 .card概念。** 两处代码始终一致。
 
 ### 验证代码
 
