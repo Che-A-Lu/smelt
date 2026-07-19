@@ -1,5 +1,7 @@
 # Smelt Lite — the starting point
 
+> **Built by a non-CS college student, entirely with AI.** No hand-written code. Just an idea, a lot of conversations, and 1 billion tokens burned on the version that tried to do too much. This is the humble restart.
+>
 > A static webpage. Drag files in, get cards. Select cards, download a `.card` file. Drag a `.card` back in, see what's inside. Thirty seconds. No install. No signup. No AI model.
 
 ---
