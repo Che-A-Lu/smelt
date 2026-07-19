@@ -47,14 +47,14 @@ Dalu 截图
 - **做**：接收 Dalu 的需求 + 角色 A 的视觉设计稿 → 写出精确施工指令
 - **也做**：工程师写完后逐条验收，向 Dalu 报告
 - **不碰**：不写代码。**不做视觉判断**——视觉问题交给角色 A
-- **产出**：施工指令 `.md` 文件（放在 `smelt-lite/`）+ 代码审查报告
+- **产出**：施工指令 `.md` 文件（放在 `Smelt-Lite/`）+ 代码审查报告
 - **语气**：开放讨论、探索性
 - **文件命名**：`施工-B-xxx.md`
 
 ### 角色 C：工程师
 
 - **只做**：按施工指令写代码，不改设计
-- **产出**：修改 `smelt-lite/src/` 下的文件，跑通 `npx tsc --noEmit`
+- **产出**：修改 `Smelt-Lite/src/` 下的文件，跑通 `npx tsc --noEmit`
 - **语气**：执行式。"已修改 XX 文件""npx tsc 零错误"
 
 ### 越权红线
@@ -76,7 +76,7 @@ Dalu 截图
 ## 一、项目
 
 - **Dalu Wang（王大路）**，SUIBE 国际贸易大三
-- **GitHub**：`Che-A-Lu`，仓库 `smelt-lite`
+- **GitHub**：`Che-A-Lu`，仓库 `Smelt-Lite`
 - **不会写代码。** Dalu 是**定义者**——描述"应该是什么感觉"，AI 执行
 - **沟通**：直接、诚实。"不对""不够""换方向"是反馈，不是批评
 
@@ -96,14 +96,14 @@ Dalu 截图
 
 ## 三、仓库
 
-- **代码**：`E:\My agent file\My file\smelt-github\smelt-lite\`
-- **远程**：`https://github.com/Che-A-Lu/smelt-lite`（待 Dalu 在 GitHub 上改名）
+- **代码**：`E:\My agent file\My file\smelt-github\Smelt-Lite\`
+- **远程**：`https://github.com/Che-A-Lu/Smelt-Lite`（待 Dalu 在 GitHub 上改名）
 - **代理**：`http://127.0.0.1:7897`
 
 ### 验证
 
 ```bash
-cd "E:\My agent file\My file\smelt-github\smelt-lite"
+cd "E:\My agent file\My file\smelt-github\Smelt-Lite"
 npm install
 npx tsc --noEmit   # 零错误
 npm run dev        # → http://localhost:5173
@@ -112,8 +112,8 @@ npm run dev        # → http://localhost:5173
 ### 目录结构
 
 ```
-smelt-lite/（GitHub 仓库根目录）
-├── smelt-lite/          ← Smelt Lite 代码（施工中）
+Smelt-Lite/（GitHub 仓库根目录）
+├── Smelt-Lite/          ← Smelt Lite 代码（施工中）
 │   ├── src/
 │   │   ├── foundation/  ← types + i18n
 │   │   ├── features/    ← import + export + identity + snapshot
@@ -162,8 +162,8 @@ smelt-lite/（GitHub 仓库根目录）
 
 1. **读本文件** — 你现在在做的
 2. **读 `README_ZH.md`** — 了解 Smelt Lite
-3. **读 `施工计划.md`**（在 `smelt-lite/` 里）— 了解当前施工进度
-4. **如果 Dalu 提到 bug**：定位到 `smelt-lite/src/` 对应文件
+3. **读 `施工计划.md`**（在 `Smelt-Lite/` 里）— 了解当前施工进度
+4. **如果 Dalu 提到 bug**：定位到 `Smelt-Lite/src/` 对应文件
 5. **如果 Dalu 讨论需求**：你是角色 B，讨论、分析、设计方案
 6. **回复 Dalu 时**：简洁、直接。先说问题再给方案
 

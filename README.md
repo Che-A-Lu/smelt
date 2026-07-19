@@ -41,9 +41,9 @@ Everyone is building better AI tools. Nobody is building the thing you take with
 
 Smelt grows step by step, one `smelt-XX` at a time:
 
-- **smelt-lite** ← you are here. Static webpage, define and validate `.card`
-- **smelt-ext** — Chrome extension. One button on ChatGPT/Claude/Kimi, one click to `.card`
-- **smelt-desk** — Desktop app. `.card` becomes a native file type. Double-click to open.
+- **Smelt-Lite** ← you are here. Static webpage, define and validate `.card`
+- **Smelt-Ext** — Chrome extension. One button on ChatGPT/Claude/Kimi, one click to `.card`
+- **Smelt-Desk** — Desktop app. `.card` becomes a native file type. Double-click to open.
 
 Each step is independently useful. None waits for the next.
 

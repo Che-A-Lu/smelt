@@ -41,9 +41,9 @@
 
 Smelt 一步一步长，每个 `smelt-XX` 独立可用：
 
-- **smelt-lite** ← 你在这里。静态网页，定义和验证 `.card`
-- **smelt-ext** — Chrome 扩展。ChatGPT/Claude/Kimi 页面上一个按钮，一键导出 `.card`
-- **smelt-desk** — 桌面应用。`.card` 成为原生文件类型，双击打开
+- **Smelt-Lite** ← 你在这里。静态网页，定义和验证 `.card`
+- **Smelt-Ext** — Chrome 扩展。ChatGPT/Claude/Kimi 页面上一个按钮，一键导出 `.card`
+- **Smelt-Desk** — 桌面应用。`.card` 成为原生文件类型，双击打开
 
 每一步都独立可用。不等下一步。
 
